@@ -57,7 +57,7 @@
 			<h3>Light speed scraping and parsing with jQuery</h3>
 			<p>jqueryScrape is a tiny script and PHP proxy that lets you scrape any viewable URL from jQuery, and gives you access
 			to the scraped DOM as a jQuery object</p>
-			<p>Each site below is pulled in on $('document').ready asynchronously, and each site took 20 to 30 lines of jQuery to
+			<p>Each site below is pulled in on $('document').ready asynchronously, and each site takes between 10 and 30 lines of jQuery to
 			parse and populate.</p>
 			<p>There is still further that the plugin can be optimized, so if you have the chops and interest, fork it on
 			<a href="http://www.github.com/beezee/jqueryScrape">github</a>.</p>
@@ -185,6 +185,23 @@
 				});
 				diggdiv.appendTo(scraped);
 			});
+			var mashablediv = $('<div class="container expandable">');
+			$.template('sectionTitle', 'Recent Mashable Posts');
+			titleTemplate.tmpl().appendTo(mashablediv);
+			$('body').bind('mashable', function(e, response) {
+				var mashable = $.jqueryScrape.span2img(response);
+				var item = {};
+				mashable.find('article.post').each(function(index) {
+					item.hidden = (index >= 3) ? ' hidden' : '';
+					item.showImg = $(this).find('.image-frame img').length;
+					$.template('featImg', $(this).find('.image-frame img').attr('src'));
+					$.template('itemTitle', $(this).find('.entry-title h2').html());
+					$.template('itemText', $(this).find('.entry-summary').html());
+					itemTemplate.tmpl(item).appendTo(mashablediv);
+				});
+				mashablediv.appendTo(scraped);
+			});
+			$.jqueryScrape.getResult('http://www.mashable.com', 'mashable');
 			$.jqueryScrape.getResult('http://www.digg.com', 'digg');
 			$.jqueryScrape.getResult('http://youtube.com', 'youtube');
 			$.jqueryScrape.getResult('http://buzzfeed.com', 'buzzfeed');
