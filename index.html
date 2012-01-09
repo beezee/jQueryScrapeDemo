@@ -57,9 +57,8 @@
 			<h3>Light speed scraping and parsing with jQuery</h3>
 			<p>jqueryScrape is a tiny script and PHP proxy that lets you scrape any viewable URL from jQuery, and gives you access
 			to the scraped DOM as a jQuery object</p>
-			<p>The columns below are pulled from their respective sites on $('document').ready(), and inserted into the dom to be formatted
-			by local CSS. The demo took ~60 lines of jQuery to acheive, viewable in the source
-			of this page.</p>
+			<p>Each site below is pulled in on $('document').ready asynchronously, and each site took 20 to 30 lines of jQuery to
+			parse and populate.</p>
 			<p>There is still further that the plugin can be optimized, so if you have the chops and interest, fork it on
 			<a href="http://www.github.com/beezee/jqueryScrape">github</a>.</p>
 		</div>
@@ -67,7 +66,7 @@
 			&nbsp;
 		</div>
 	</div>
-		<div id="scraped"></div>
+		<div id="scraped"><hr /></div>
 
 	</div><!-- container -->
 
@@ -84,7 +83,7 @@
 	</script>
 	<script id="item-template" type="text/x-jquery-tmpl">
 		<div class="one-third column item${hidden}">
-			<img class="jqsdemo-feat-img" src="{{tmpl 'imgSrc'}}" />
+			{{if showImg == true}}<img class="jqsdemo-feat-img" src="{{tmpl 'featImg'}}" />{{/if}}
 			<h4 class="jqsdemo-item-title">{{tmpl 'itemTitle'}}</h4>
 			<br /><br />
 			{{tmpl 'itemText'}}
@@ -107,7 +106,8 @@
 				youTube.find('div.feed-page ul li').each(function(index) {
 					var item = {};
 					item.hidden = (index >= 3) ? ' hidden' : '';
-					$.template('imgSrc', $(this).find('.clip img:first').attr('src'));
+					$.template('featImg', $(this).find('.clip img:first').attr('src'));
+					item.showImg = (typeof($(this).find('.clip img:first').attr('src')) == 'undefined') ? false : true;
 					var h4 = $(this).find('.feed-item-visual-description h4');
 					h4a = h4.find('a');
 					h4a.attr('href', 'http://www.youtube.com'+h4a.attr('href'));
@@ -125,42 +125,82 @@
 				});
 				var count = 0;
 				var buzzfeeddiv = $('<div class="container expandable">');
+				$.template('sectionTitle', 'Recent BuzzFeed Posts');
+				titleTemplate.tmpl().appendTo(buzzfeeddiv);
+				var item = {};
 				buzzfeed.find('.std-posts li').each(function() {
-					var div = $('<div class="one-third column item">');
-					if (count >= 3) div.addClass('hidden');
-					var img = $(this).find('.thumb-unit img.jqsThumb');
-					img.addClass('jqsdemo-feat-img');
+					item.hidden = (count >= 3) ? ' hidden' : '';
+					var imgSrc = $(this).find('.thumb-unit img.jqsThumb').attr('src');
+					$.template('featImg', imgSrc);
+					if (typeof(imgSrc) == 'undefined') return true;
+					var imgParts = imgSrc.split('/');
+					var imgSlug = imgParts.pop();
+					item.showImg = true;
+					if (imgSlug == 'undefined') return true;
 					var h2 = $(this).find('h2');
 					var h2a = h2.find('a');
 					h2.addClass('jqsdemo-item-title');
 					h2a.attr('href', 'http://www.buzzfeed.com'+h2a.attr('href'));
-					var desc = $(this).find('.description');
-					div.append(img).append(h2).append('<br /><br />').append(desc);
-					if (div.text() != '') { div.appendTo(buzzfeeddiv); count++ }
+					$.template('itemTitle', h2.html());
+					$.template('itemText', $(this).find('.description').html());
+					itemTemplate.tmpl(item).appendTo(buzzfeeddiv);
+					buzzfeeddiv.appendTo(scraped);
+					count++
 				})
-				$('<h3>Recent BuzzFeed Posts</h3><hr />').prependTo(buzzfeeddiv);
-				buzzfeeddiv.appendTo(scraped);
 			})
 			var nytdiv = $('<div class="container expandable">');
+			$.template('sectionTitle', 'Recent NYT Tech');
+			titleTemplate.tmpl().appendTo(nytdiv);
 			$('body').bind('nyt', function(e, response) {
 				var nyT = $.jqueryScrape.span2img(response);
-				nyT.find('.story').each(function(index) {
-					var div = $('<div class="one-third column item">');
-					if (index >= 3) div.addClass('hidden');
-					var img = $(this).find('img');
-					img.addClass('jqsdemo-feat-img');
-					var h3 = $(this).find('h3');
-					h3.addClass('jqsdemo-item-title');
-					var summary = $(this).find('.summary');
-					div.append(img).append( h3).append('<br /><br />').append(summary);
-					if (div.text() != '') $(nytdiv).append(div);
+				var item = {};
+				nyT.find('.columnGroup .story').each(function(index) {
+					if (index == 0) return true;
+					item.hidden = (index >= 4) ? ' hidden' : '';
+					item.showImg = $(this).find('img').length > 0;
+					$.template('featImg', $(this).find('img').attr('src'));
+					$.template('itemTitle', $(this).find('h3').html());
+					$.template('itemText', $(this).find('.summary:first').html());
+					itemTemplate.tmpl(item).appendTo(nytdiv);
+					nytdiv.appendTo(scraped);
 				})
-				$('<h3>Recent NYT Tech News</h3><hr />').prependTo(nytdiv);
-				nytdiv.appendTo(scraped);
 			});
+			var diggdiv = $('<div class="container expandable">');
+			$.template('sectionTitle', 'Recently Dugg');
+			titleTemplate.tmpl().appendTo(diggdiv);
+			$('body').bind('digg', function(e, response) {
+				var digg = $.jqueryScrape.span2img(response);
+				var item = {};
+				digg.find('.slim-story-item').each(function(index) {
+					if (index == 0) return true;
+					item.hidden = (index >= 4) ? ' hidden' : '';
+					item.showImg = $(this).find('.story-item-media img').length;
+					$.template('featImg', $(this).find('.story-item-media img').attr('src'));
+					var h3 = $(this).find('h3.story-item-title');
+					var h3a = h3.find('a');
+					h3a.attr('href', 'http://www.digg.com' + h3a.attr('href'));
+					$.template('itemTitle', h3.html());
+					$.template('itemText', $(this).find('p.story-item-description').text());
+					itemTemplate.tmpl(item).appendTo(diggdiv);	
+				});
+				diggdiv.appendTo(scraped);
+			});
+			$.jqueryScrape.getResult('http://www.digg.com', 'digg');
 			$.jqueryScrape.getResult('http://youtube.com', 'youtube');
 			$.jqueryScrape.getResult('http://buzzfeed.com', 'buzzfeed');
 			$.jqueryScrape.getResult('http://www.nytimes.com/pages/technology/index.html', 'nyt');
+		
+		$('.expand').live('click', function() {
+			$(this).hide();
+			$(this).parent().find('.hidden').slideDown('slow');
+			$('<div style="padding:5px;background:yellow;border:1px solid black;position:fixed;bottom:16px;left:16px;"><a class="hide-extra" style="cursor:pointer;">Back to normal</a></div>').appendTo($('body'));
+		});
+		
+		$('.hide-extra').live('click', function() {
+			$(this).parent().remove();
+			$('.expand').show();
+			$('.hidden').slideUp('slow');
+		});
 		});
 	</script>
 
