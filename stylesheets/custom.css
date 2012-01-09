@@ -1,0 +1,45 @@
+.jqsdemo-feat-img {
+ width:80px;
+ height:80px;
+ float:left;
+ margin-right:3px;
+ border:3px solid #e2e2e2;
+}
+
+p {
+    font-family: 'Noticia Text', serif !important;
+}
+
+.hidden {
+    display:none;
+}
+
+.jqsdemo-item-title {
+    font-size:18px;
+    line-height:24px;
+}
+
+.jqsdemo-item-title a{
+    text-decoration: none;
+    color:#d1a41d;
+}
+
+.item {
+    height:300px;
+    margin-top: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid black;
+    overflow:hidden;
+}
+
+.expandable {
+    position:relative;
+}
+
+.expand {
+    position:absolute;
+    top:4px;
+    right:4px;
+    cursor:pointer;
+}
